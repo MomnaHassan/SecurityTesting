@@ -1,0 +1,190 @@
+<?php
+
+// error_reporting(E_ALL);
+// ini_set('display_errors', 1);
+
+include_once "/var/www/html/ncrm/views/crmViews/nayatelCrm/include_files/DbClass.php";
+$db = new DbClass();
+
+require_once "/var/www/html/ncrm/views/crmViews/nayatelCrm/TT_Tiers/SimpleXLSX.php";
+$simpleXLSX = new SimpleXLSX;
+
+$excelFile = '/var/www/html/ncrm/views/crmViews/nayatelCrm/TT_Tiers/VIDEO_App Support Tiers.xlsx';
+
+if ($xlsx = SimpleXLSX::parse($excelFile)) {
+    $rows = $xlsx->rows();
+
+    // Remove the first row (actual data) from the $rows array
+    array_shift($rows);
+
+    // Extract headers from the second row
+    $headers = array_shift($rows);
+
+    // Extract category from the first row
+    $category = $rows[0][0]; // Assuming category is in the first column
+     
+    // Insert category into ntlcrm.tt_services table
+    // $category_query = "INSERT INTO ntlcrm.tt_services (category) VALUES ('$category')";
+    // $db->execInsertUpdate($category_query);
+
+    $tier1_id_query = "SELECT id FROM ntlcrm.tt_services where service='$category'";
+    $tier1_id = $db->execSelect($tier1_id_query);
+    $tiermain_parent_id = $tier1_id[0]['ID'];
+    // var_dump($tier1_id_query);exit;
+    //  var_dump( $tier1_parent_id);exit;
+    // Loop through each row of data
+    $count=0;
+    foreach ($rows as $row) {
+        // Insert data into ntlcrm.tt_tier1 table with sequence value for ID and parent table NTLCRM.TT_SERVICES
+        $tier1_query = "INSERT INTO ntlcrm.tt_tier1 (ID, parentTable,parentId,status,datetime,operator" . implode(', ', array_slice($headers, 0, 7)) . ") VALUES (NTLCRM.TT_Tier1_ID_SEQ.nextval, 'NTLCRM.TT_SERVICES',$tiermain_parent_id,'active',sysdate,'momna.hassan', ";
+        $tier1_values = array();
+
+        foreach (array_slice($row, 1, 6) as $value) {
+            if($value=='NO') {$value = 'false'; }
+            else if($value=='YES') {$value = 'true'; }
+            // Remove special characters using htmlspecialchars
+            $tier1_values[] = "'" . str_replace("'", "", htmlspecialchars($value, ENT_QUOTES, 'UTF-8')) . "'";
+        }
+
+        $tier1_query .= implode(', ', $tier1_values) . ")";
+      
+        // Get label from the tier1_values array
+        $label = $tier1_values[4];
+
+        // Check if the same label exists in ntlcrm.tt_tier1
+        $tier1_label_query = "SELECT ID FROM ntlcrm.tt_tier1 WHERE label = '$label'";
+        $tier1_label_result = $db->execSelect($tier1_label_query);
+
+        // If the label already exists, continue to the next row
+        if ($tier1_label_result) {
+            continue;
+        }
+
+        var_dump($tier1_query);
+        // Execute INSERT statement for ntlcrm.tt_tier1 using custom method
+        $res = $db->execInsertUpdate($tier1_query);
+        var_dump($res);
+        // Get the last inserted ID from ntlcrm.tt_tier1
+        $tier1_id_query = "SELECT MAX(ID) as id FROM ntlcrm.tt_tier1";
+        $tier1_id = $db->execSelect($tier1_id_query);
+        $tier1_parent_id = $tier1_id[0]['ID'];
+
+        // Insert data into ntlcrm.tt_tier2 table with sequence value for ID and parent table NTLCRM.TT_TIER1
+        $tier2_query = "INSERT INTO ntlcrm.tt_tier2 (ID, parentTable, parentId, status,datetime,operator, " . implode(', ', array_slice($headers, 7, 6)) . ") VALUES (NTLCRM.TT_Tier2_ID_SEQ.nextval, 'NTLCRM.TT_TIER1', $tier1_parent_id,'active',sysdate,'momna.hassan', ";
+        $tier2_values = array();
+
+        foreach (array_slice($row, 7, 6) as $value) {
+            if($value=='NO') {$value = 'false'; }
+            else if($value=='YES') {$value = 'true'; }
+            // Remove special characters using htmlspecialchars
+            $tier2_values[] = "'" . str_replace("'", "", htmlspecialchars($value, ENT_QUOTES, 'UTF-8')) . "'";
+        }
+
+        $tier2_query .= implode(', ', $tier2_values) . ")";
+
+        var_dump($tier2_query);
+
+        // Execute INSERT statement for ntlcrm.tt_tier2 using custom method
+        $res1 = $db->execInsertUpdate($tier2_query);
+        var_dump($res1);
+
+        // Get the last inserted ID from ntlcrm.tt_tier2
+        $tier2_id_query = "SELECT MAX(ID) as id FROM ntlcrm.tt_tier2";
+        $tier2_id = $db->execSelect($tier2_id_query);
+        $tier2_parent_id = $tier2_id[0]['ID'];
+
+        // Insert data into ntlcrm.tt_tier3 table with sequence value for ID and parent table NTLCRM.TT_TIER2
+        $tier3_query = "INSERT INTO ntlcrm.tt_tier3 (ID, parentTable, parentId,status,datetime,operator, " . implode(', ', array_slice($headers, 13, 6)) . ") VALUES (NTLCRM.TT_Tier3_ID_SEQ.nextval, 'NTLCRM.TT_TIER2', $tier2_parent_id,'active',sysdate,'momna.hassan', ";
+        $tier3_values = array();
+
+        foreach (array_slice($row, 13, 6) as $value) {
+            if($value=='NO') {$value = 'false'; }
+            else if($value=='YES') {$value = 'true'; }
+            // Remove special characters using htmlspecialchars
+            $tier3_values[] = "'" . str_replace("'", "", htmlspecialchars($value, ENT_QUOTES, 'UTF-8')) . "'";
+        }
+
+        $tier3_query .= implode(', ', $tier3_values) . ")";
+
+        var_dump($tier3_query);
+
+        // Execute INSERT statement for ntlcrm.tt_tier3 using custom method
+        $res2 = $db->execInsertUpdate($tier3_query);
+        var_dump($res2);
+
+        // Get the last inserted ID from ntlcrm.tt_tier3
+        $tier3_id_query = "SELECT MAX(ID) as id FROM ntlcrm.tt_tier3";
+        $tier3_id = $db->execSelect($tier3_id_query);
+        $tier3_parent_id = $tier3_id[0]['ID'];
+
+        // Insert data into ntlcrm.tt_tier4 table with sequence value for ID and parent table NTLCRM.TT_TIER3
+        $tier4_query = "INSERT INTO ntlcrm.tt_tier4 (ID, parentTable, parentId,status,datetime,operator, " . implode(', ', array_slice($headers, 19, 6)) . ") VALUES (NTLCRM.TT_Tier4_ID_SEQ.nextval, 'NTLCRM.TT_TIER3', $tier3_parent_id,'active',sysdate,'momna.hassan', ";
+        $tier4_values = array();
+
+        foreach (array_slice($row, 19, 6) as $value) {
+            if($value=='NO') {$value = 'false'; }
+            else if($value=='YES') {$value = 'true'; }
+            // Remove special characters using htmlspecialchars
+            $tier4_values[] = "'" . str_replace("'", "", htmlspecialchars($value, ENT_QUOTES, 'UTF-8')) . "'";
+        }
+
+        $tier4_query .= implode(', ', $tier4_values) . ")";
+
+        var_dump($tier4_query);
+
+        // Execute INSERT statement for ntlcrm.tt_tier4 using custom method
+        $res3 = $db->execInsertUpdate($tier4_query);
+        var_dump($res3);
+
+        // After tier4 insertion, update parentId in ntlcrm.faulttypes
+        // $ticket_values = explode('-', $row[25]);
+        // $fault_type = $ticket_values[0];
+        // $sub_fault_type = $ticket_values[1];
+
+        $ticket_values = strrpos($row[25], '-');
+
+        // Extract the substring before and after the last '-'
+        $fault_type = substr($row[25], 0, $ticket_values);
+        $sub_fault_type = substr($row[25], $ticket_values + 1);
+
+        $lastColumnValue = $row[25];
+
+        var_dump($fault_type);
+        var_dump($sub_fault_type);
+   
+        // Query to find fault type and sub-fault type in ntlcrm.faulttypes table
+        $faulttypes_query = "SELECT ID FROM ntlcrm.faulttypes WHERE lower(faulttype) = rtrim(lower('$fault_type')) AND lower(subfaulttype) = ltrim(lower('$sub_fault_type'))";
+        $faulttypes_result = $db->execSelect($faulttypes_query);
+
+        // If a match is found, update the parentId column in ntlcrm.faulttypes table
+        if ($faulttypes_result) {
+            $faulttypes_id = $faulttypes_result[0]['ID'];
+
+            // Get the last inserted ID from ntlcrm.tt_tier4
+            $tier4_id_query = "SELECT MAX(ID) as id FROM ntlcrm.tt_tier4";
+            $tier4_id = $db->execSelect($tier4_id_query);
+            $tier4_parent_id = $tier4_id[0]['ID'];
+
+            // Update parentId column in ntlcrm.faulttypes table
+            $update_query = "UPDATE ntlcrm.faulttypes SET parentId = $tier4_parent_id WHERE ID = $faulttypes_id";
+            var_dump($update_query);
+        
+            $res5 = $db->execInsertUpdate($update_query);
+            var_dump($res5);
+            $count++;
+        }
+        // if($count > 5)
+        // {
+        //     exit();
+        // }
+        // exit();
+        // Repeat the same process for the next row
+    }
+
+  
+}
+
+
+else {
+    echo SimpleXLSX::parseError();
+}
